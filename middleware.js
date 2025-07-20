@@ -1,3 +1,7 @@
+if (request.nextUrl.pathname.startsWith('/api/js-check')) {
+  return NextResponse.next(); // skip middleware for this API route
+}
+
 import { NextResponse } from 'next/server';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
