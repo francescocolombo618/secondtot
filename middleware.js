@@ -1,7 +1,3 @@
-if (request.nextUrl.pathname.startsWith('/api/js-check')) {
-  return NextResponse.next(); // skip middleware for this API route
-}
-
 import { NextResponse } from 'next/server';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
@@ -17,6 +13,12 @@ const BLOCKED_IPS = ['123.456.789.000'];
 export async function middleware(request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
   const userAgent = request.headers.get('user-agent') || '';
+  const url = request.nextUrl.pathname;
+
+  // ✅ 0. Skip middleware for internal API route
+  if (request.nextUrl.pathname.startsWith('/api/js-check')) {
+  return NextResponse.next(); // skip middleware for this API route
+}
 
   // 1. Block by IP
   if (BLOCKED_IPS.includes(ip)) {
