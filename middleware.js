@@ -1,46 +1,44 @@
 import { NextResponse } from 'next/server';
-import { geolocation } from '@vercel/edge';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
 const limiter = new RateLimiterMemory({
-  points: 20, // 20 requests
-  duration: 60, // per 60 seconds per IP
+  points: 20,
+  duration: 60,
 });
 
 const ALLOWED_COUNTRIES = ['AU', 'NG'];
 const BLOCKED_USER_AGENTS = ['curl', 'wget', 'bot', 'spider', 'crawl'];
-const BLOCKED_IPS = ['123.456.789.000', '111.222.333.444']; // Add real IPs here
+const BLOCKED_IPS = ['123.456.789.000'];
 
 export async function middleware(request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
   const userAgent = request.headers.get('user-agent') || '';
 
-  // IP blocking
+  // 1. Block by IP
   if (BLOCKED_IPS.includes(ip)) {
     return new Response('Forbidden: IP blocked', { status: 403 });
   }
 
-  // Bot user-agent detection
+  // 2. Block by User-Agent
   if (BLOCKED_USER_AGENTS.some(bot => userAgent.toLowerCase().includes(bot))) {
     return new Response('Forbidden: Bot detected', { status: 403 });
   }
 
-  // JavaScript execution check (custom header injected by browser)
+  // 3. Check if JS is enabled
   if (!request.headers.get('x-js-enabled')) {
-    return new Response('Forbidden: JS not enabled', { status: 403 });
+    return new Response('Forbidden: JavaScript required', { status: 403 });
   }
 
-  // Geolocation check
-  const geo = geolocation(request);
-  const country = geo?.country || 'unknown';
+  // 4. Country block
+  const country = request.geo?.country || 'unknown';
   if (!ALLOWED_COUNTRIES.includes(country)) {
     return new Response(`Access denied from ${country}`, { status: 403 });
   }
 
-  // Rate limiting
+  // 5. Rate limiting
   try {
     await limiter.consume(ip);
-  } catch (err) {
+  } catch {
     return new Response('Too Many Requests', { status: 429 });
   }
 
