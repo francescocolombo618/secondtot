@@ -4,7 +4,7 @@ export default function Document() {
   return (
     <Html>
       <Head>
-        <script src="/js/enforce-js.js" defer></script>
+        <script src="../public/js/enforce-js.js" defer></script>
       </Head>
       <body>
         <Main />
